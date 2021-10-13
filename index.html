@@ -104,6 +104,10 @@
 
     map.on("load", function() {
       const handler = function(e) {
+        if (map.getZoom() < 14) {
+          map.getCanvas().style.cursor = '';
+          return;
+        }
         switch (e.type) {
           case "mouseenter":
             map.getCanvas().style.cursor = 'pointer';
