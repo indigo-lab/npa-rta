@@ -129,6 +129,7 @@
         });
       });
 
+      // 画面右上、プルダウンフィルタ
       map.addControl({
         onAdd: function(map) {
           this._map = map;
@@ -141,26 +142,79 @@
           const colors = ["rgba(0,0,127,0.50)", "rgba(256,127,0,0.80)"];
 
           const filters = {
-            "指定なし": colors[0],
-            "65歳以上の当事者を含む事故": ["case", ["!=", ["slice", ["get", "_年齢"], 5, 7], "00"], colors[1], colors[0]],
-            "75歳以上の当事者を含む事故": ["case", ["!=", ["slice", ["get", "_年齢"], 6, 7], "0"], colors[1], colors[0]],
-            "65歳未満の当事者を含まない事故": ["case", ["==", ["slice", ["get", "_年齢"], 0, 5], "00000"], colors[1], colors[0]],
-            "当事者に自転車を含む事故": ["case", ["!=", ["slice", ["get", "_当事者種別"], 23, 25], "00"], colors[1], colors[0]],
-            "当事者に電動アシスト自転車を含む事故": ["case", ["!=", ["slice", ["get", "_当事者種別"], 24, 25], "0"], colors[1], colors[0]],
-            "当事者に歩行者を含む事故": ["case", ["!=", ["slice", ["get", "_当事者種別"], 26, 27], "0"], colors[1], colors[0]],
-            "自転車と歩行者の事故": ["case", ["==", ["get", "_当事者種別"], "0000 0000 0000 0000 0000 0001 0010 0000".replace(/ /g, "")], colors[1], colors[0]],
-            "自転車と自転車の事故": ["case", ["==", ["get", "_当事者種別"], "0000 0000 0000 0000 0000 0001 0000 0000".replace(/ /g, "")], colors[1], colors[0]]
+            default: {
+              "label": "指定なし",
+              "paint": {
+                "circle-color": colors[0]
+              }
+            },
+            containsOver65: {
+              "label": "65歳以上の当事者を含む事故",
+              "paint": {
+                "circle-color": ["case", ["!=", ["slice", ["get", "_年齢"], 5, 7], "00"], colors[1], colors[0]]
+              }
+            },
+            containsOver75: {
+              "label": "75歳以上の当事者を含む事故",
+              "paint": {
+                "circle-color": ["case", ["!=", ["slice", ["get", "_年齢"], 6, 7], "0"], colors[1], colors[0]]
+              }
+            },
+            over65only: {
+              "label": "65歳未満の当事者を含まない事故",
+              "paint": {
+                "circle-color": ["case", ["==", ["slice", ["get", "_年齢"], 0, 5], "00000"], colors[1], colors[0]]
+              }
+            },
+            hokousha: {
+              "label": "当事者に歩行者を含む事故",
+              "paint": {
+                "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 26, 27], "0"], colors[1], colors[0]]
+              }
+            },
+            jitensha: {
+              "label": "当事者に自転車を含む事故",
+              "paint": {
+                "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 23, 25], "00"], colors[1], colors[0]]
+              }
+            },
+            jitensha_assist: {
+              "label": "当事者に電動アシスト自転車を含む事故",
+              "paint": {
+                "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 24, 25], "0"], colors[1], colors[0]]
+              }
+            },
+            jitensha_vs_hokousha: {
+              "label": "自転車と歩行者の事故",
+              "paint": {
+                "circle-color": ["case", ["==", ["get", "_当事者種別"], "0000 0000 0000 0000 0000 0001 0010 0000".replace(/ /g, "")], colors[1], colors[0]]
+              }
+            },
+            jitensha_vs_jitensha: {
+              "label": "自転車と自転車の事故",
+              "paint": {
+                "circle-color": ["case", ["==", ["get", "_当事者種別"], "0000 0000 0000 0000 0000 0001 0000 0000".replace(/ /g, "")], colors[1], colors[0]]
+              }
+            }
           };
 
           Object.keys(filters).forEach(key => {
             const option = document.createElement("option");
-            option.textContent = key;
+            option.setAttribute("value", key);
+            if (location.search === "?" + key) option.setAttribute("selected", "selected");
+            option.textContent = filters[key].label;
             select.appendChild(option);
           });
 
-          select.addEventListener("change", function() {
-            map.setPaintProperty("circle", "circle-color", filters[select.value]);
-          });
+          const onChange = function() {
+            const selection = filters[select.value];
+            history.replaceState(null, '', location.pathname + "?" + select.value + location.hash);
+            Object.keys(selection.paint).forEach(key => {
+              map.setPaintProperty("circle", key, selection.paint[key]);
+            });
+          };
+          select.addEventListener("change", onChange);
+          this._map.once("idle", onChange);
 
           return this._container;
         },
@@ -172,6 +226,33 @@
           return 'top-right';
         }
       });
+
+      // 画面左下、 POI 件数と割合の表示
+      map.addControl({
+        onAdd: function(map) {
+          this._map = map;
+          const container = this._container = document.createElement('div');
+          container.setAttribute("class", "mapboxgl-ctrl");
+          container.setAttribute("style", "font-weight:bold;background:rgba(0,0,0,0.8);color:white;margin:0 !important;padding:1px 4px !important;");
+          container.textContent = "loading";
+          this._map.on("idle", e => {
+            const features = this._map.queryRenderedFeatures({
+              layers: ["circle"]
+            });
+            const filtered = features.filter(x => x.layer.paint["circle-color"].r > 0);
+            container.textContent = `${(filtered.length / features.length * 100).toFixed(2)}% (${filtered.length}/${features.length})`;
+          });
+          return this._container;
+        },
+        onRemove: function() {
+          this._container.parentNode.removeChild(this._container);
+          this._map = undefined;
+        },
+        getDefaultPosition: function() {
+          return 'bottom-left';
+        }
+      });
+
     });
   </script>
 </body>
