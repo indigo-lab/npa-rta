@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>npa-rta</title>
+  <meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0" />
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.js"></script>
+  <script src="https://indigo-lab.github.io/npa-rta-2019/enrichment.bundle.js"></script>
+  <style>
+    .my-popup {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map" style="position:absolute;top:0;left:0;bottom:0;right:0;"></div>
+  <script>
+    const base = new URL("./", location.href).toString();
+    const style = {
+      "version": 8,
+      "glyphs": "https://maps.gsi.go.jp/xyz/noto-jp/{fontstack}/{range}.pbf",
+      "sources": {
+        "pale": {
+          "type": "raster",
+          "tiles": [
+            "https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png"
+          ],
+          "minzoom": 5,
+          "maxzoom": 18,
+          "tileSize": 256,
+          "attribution": "<a href='http://maps.gsi.go.jp/development/ichiran.html'>地理院タイル</a>"
+        },
+        "npa-rta": {
+          "type": "vector",
+          "tiles": [
+            `${base}/{z}/{x}/{y}.pbf`
+          ],
+          "minzoom": 11,
+          "maxzoom": 14,
+          "attribution": "<a href='https://www.npa.go.jp/publications/statistics/koutsuu/opendata/index_opendata.html'>警察庁:交通事故統計情報のオープンデータ(2019年)</a> を加工して作成"
+        }
+      },
+      "layers": [{
+        "id": "pale",
+        "type": "raster",
+        "source": "pale",
+        "minzoom": 5,
+        "maxzoom": 24
+      }, {
+        "id": "circle",
+        "type": "circle",
+        "source": "npa-rta",
+        "source-layer": "point",
+        "minzoom": 11,
+        "maxzoom": 24,
+        "paint": {
+          "circle-radius": [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            11, 3,
+            12, 4,
+            13, 5,
+            14, 6,
+            15, 7,
+            16, 8
+          ],
+          "circle-color": "#000080"
+        }
+      }]
+    };
+
+
+    const toHTML = function(feature) {
+      const properties = feature.properties;
+      const html = ["<div class='my-popup'>"];
+      Object.keys(properties).forEach(k => {
+        if (k.match(/@$/)) return;
+        if (properties[k + "@"]) {
+          html.push(`<b>${k}</b> `);
+          html.push(`<span>${properties[k+"@"]} (${properties[k]})</span><br/>`);
+        } else {
+          html.push(`<b>${k}</b> `);
+          html.push(`<span>${properties[k]}</span><br/>`);
+        }
+      });
+      html.push("</div>");
+      return html.join("");
+    };
+
+    const map = new maplibregl.Map({
+      "container": "map",
+      "center": [139.68786, 35.68355],
+      "zoom": 14.65,
+      "pitch": 60,
+      "bearing": 22,
+      "hash": true,
+      "style": style
+    });
+
+    map.on("load", function() {
+      const handler = function(e) {
+        switch (e.type) {
+          case "mouseenter":
+            map.getCanvas().style.cursor = 'pointer';
+            break;
+          case "mouseleave":
+            map.getCanvas().style.cursor = '';
+            break;
+          case "click":
+            new maplibregl.Popup()
+              .setLngLat(e.lngLat)
+              .setHTML(toHTML(enrichment(e.features[0])))
+              .addTo(map);
+            break;
+        }
+      };
+      style.layers.filter(a => a["source"] === "npa-rta").forEach(layer => {
+        ["click", "mouseenter", "mouseleave"].forEach(type => {
+          map.on(type, layer.id, handler);
+        });
+      });
+
+      map.addControl({
+        onAdd: function(map) {
+          this._map = map;
+          this._container = document.createElement('div');
+          this._container.className = 'mapboxgl-ctrl';
+
+          const select = document.createElement("select");
+          this._container.appendChild(select);
+
+          const colors = ["rgba(0,0,127,0.50)", "rgba(256,127,0,0.80)"];
+
+          const filters = {
+            "指定なし": colors[0],
+            "65歳以上の当事者を含む事故": ["case", ["!=", ["slice", ["get", "_年齢"], 5, 7], "00"], colors[1], colors[0]],
+            "75歳以上の当事者を含む事故": ["case", ["!=", ["slice", ["get", "_年齢"], 6, 7], "0"], colors[1], colors[0]],
+            "65歳未満の当事者を含まない事故": ["case", ["==", ["slice", ["get", "_年齢"], 0, 5], "00000"], colors[1], colors[0]],
+            "当事者に自転車を含む事故": ["case", ["!=", ["slice", ["get", "_当事者種別"], 23, 25], "00"], colors[1], colors[0]],
+            "当事者に電動アシスト自転車を含む事故": ["case", ["!=", ["slice", ["get", "_当事者種別"], 24, 25], "0"], colors[1], colors[0]],
+            "当事者に歩行者を含む事故": ["case", ["!=", ["slice", ["get", "_当事者種別"], 26, 27], "0"], colors[1], colors[0]],
+            "自転車と歩行者の事故": ["case", ["==", ["get", "_当事者種別"], "0000 0000 0000 0000 0000 0001 0010 0000".replace(/ /g, "")], colors[1], colors[0]],
+            "自転車と自転車の事故": ["case", ["==", ["get", "_当事者種別"], "0000 0000 0000 0000 0000 0001 0000 0000".replace(/ /g, "")], colors[1], colors[0]]
+          };
+
+          Object.keys(filters).forEach(key => {
+            const option = document.createElement("option");
+            option.textContent = key;
+            select.appendChild(option);
+          });
+
+          select.addEventListener("change", function() {
+            map.setPaintProperty("circle", "circle-color", filters[select.value]);
+          });
+
+          return this._container;
+        },
+        onRemove: function() {
+          this._container.parentNode.removeChild(this._container);
+          this._map = undefined;
+        },
+        getDefaultPosition: function() {
+          return 'top-right';
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>
