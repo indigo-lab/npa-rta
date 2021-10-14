@@ -74,6 +74,188 @@
       }]
     };
 
+    const colors = ["rgba(0,0,127,0.50)", "rgba(256,127,0,0.80)"];
+
+    const filters = {
+      default: {
+        "label": "指定なし",
+        "paint": {
+          "circle-color": colors[0]
+        }
+      },
+      contains0to24: {
+        "label": "0〜24歳の当事者を含む事故",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_年齢"], 0, 1], "0"], colors[1], colors[0]]
+        }
+      },
+      contains25to34: {
+        "label": "25〜34歳の当事者を含む事故",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_年齢"], 1, 2], "0"], colors[1], colors[0]]
+        }
+      },
+      contains35to44: {
+        "label": "35〜44歳の当事者を含む事故",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_年齢"], 2, 3], "0"], colors[1], colors[0]]
+        }
+      },
+      contains45to54: {
+        "label": "45〜54歳の当事者を含む事故",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_年齢"], 3, 4], "0"], colors[1], colors[0]]
+        }
+      },
+      contains55to64: {
+        "label": "55〜64歳の当事者を含む事故",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_年齢"], 4, 5], "0"], colors[1], colors[0]]
+        }
+      },
+      contains65to74: {
+        "label": "65〜74歳の当事者を含む事故",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_年齢"], 5, 6], "0"], colors[1], colors[0]]
+        }
+      },
+      containsOver75: {
+        "label": "75歳以上の当事者を含む事故",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_年齢"], 6, 7], "0"], colors[1], colors[0]]
+        }
+      },
+      containsOver65: {
+        "label": "65歳以上の当事者を含む事故",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_年齢"], 5, 7], "00"], colors[1], colors[0]]
+        }
+      },
+      over65only: {
+        "label": "65歳未満の当事者を含まない事故",
+        "paint": {
+          "circle-color": ["case", ["==", ["slice", ["get", "_年齢"], 0, 5], "00000"], colors[1], colors[0]]
+        }
+      },
+      jouyou: {
+        "label": "当事者に乗用車を含む事故",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 0, 6], "000000"], colors[1], colors[0]]
+        }
+      },
+      kamotsu: {
+        "label": "当事者に貨物車を含む事故",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 6, 11], "00000"], colors[1], colors[0]]
+        }
+      },
+      tokushu: {
+        "label": "当事者に特殊車を含む事故",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 11, 15], "0000"], colors[1], colors[0]]
+        }
+      },
+      moto: {
+        "label": "当事者に二輪車を含む事故",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 15, 21], "000000"], colors[1], colors[0]]
+        }
+      },
+      train: {
+        "label": "当事者に電車を含む事故",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 21, 23], "00"], colors[1], colors[0]]
+        }
+      },
+      keisharyou: {
+        "label": "当事者に軽車両を含む事故",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 23, 26], "000"], colors[1], colors[0]]
+        }
+      },
+      hokousha: {
+        "label": "当事者に歩行者を含む事故",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 26, 27], "0"], colors[1], colors[0]]
+        }
+      },
+      cat70: {
+        "label": "当事者コード70番台",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 27, 31], "0000"], colors[1], colors[0]]
+        }
+      },
+      cat71: {
+        "label": "当事者コード71歩行者以外の道路上の人",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 27, 28], "0"], colors[1], colors[0]]
+        }
+      },
+      cat72: {
+        "label": "当事者コード72道路外の人",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 28, 29], "0"], colors[1], colors[0]]
+        }
+      },
+      cat75: {
+        "label": "当事者コード75物件等",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 29, 30], "0"], colors[1], colors[0]]
+        }
+      },
+      cat76: {
+        "label": "当事者コード76相手なし",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 30, 31], "0"], colors[1], colors[0]]
+        }
+      },
+      cat00: {
+        "label": "当事者コード00対象外当事者",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 31, 32], "0"], colors[1], colors[0]]
+        }
+      },
+      jitensha: {
+        "label": "当事者に自転車を含む事故",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 23, 25], "00"], colors[1], colors[0]]
+        }
+      },
+      jitensha_assist: {
+        "label": "当事者に電動アシスト自転車を含む事故",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 24, 25], "0"], colors[1], colors[0]]
+        }
+      },
+      moto50: {
+        "label": "当事者に原付自転車を含む事故",
+        "paint": {
+          "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 20, 21], "0"], colors[1], colors[0]]
+        }
+      },
+      jitensha_vs_hokousha: {
+        "label": "自転車と歩行者の事故",
+        "paint": {
+          "circle-color": ["case", ["==", ["get", "_当事者種別"], "0000 0000 0000 0000 0000 0001 0010 0000".replace(/ /g, "")], colors[1], colors[0]]
+        }
+      },
+      jitensha_vs_jitensha: {
+        "label": "自転車と自転車の事故",
+        "paint": {
+          "circle-color": ["case", ["==", ["get", "_当事者種別"], "0000 0000 0000 0000 0000 0001 0000 0000".replace(/ /g, "")], colors[1], colors[0]]
+        }
+      }
+    };
+
+    (function(key) {
+      if (filters[key] !== undefined) {
+        const paint = filters[key].paint;
+        const layer = style.layers.find(a => a.id === "circle");
+        Object.keys(paint).forEach(prop => {
+          layer.paint[prop] = paint[prop];
+        });
+      }
+    })(location.search.replace(/^\?/, ""));
 
     const toHTML = function(feature) {
       const properties = feature.properties;
@@ -139,65 +321,6 @@
           const select = document.createElement("select");
           this._container.appendChild(select);
 
-          const colors = ["rgba(0,0,127,0.50)", "rgba(256,127,0,0.80)"];
-
-          const filters = {
-            default: {
-              "label": "指定なし",
-              "paint": {
-                "circle-color": colors[0]
-              }
-            },
-            containsOver65: {
-              "label": "65歳以上の当事者を含む事故",
-              "paint": {
-                "circle-color": ["case", ["!=", ["slice", ["get", "_年齢"], 5, 7], "00"], colors[1], colors[0]]
-              }
-            },
-            containsOver75: {
-              "label": "75歳以上の当事者を含む事故",
-              "paint": {
-                "circle-color": ["case", ["!=", ["slice", ["get", "_年齢"], 6, 7], "0"], colors[1], colors[0]]
-              }
-            },
-            over65only: {
-              "label": "65歳未満の当事者を含まない事故",
-              "paint": {
-                "circle-color": ["case", ["==", ["slice", ["get", "_年齢"], 0, 5], "00000"], colors[1], colors[0]]
-              }
-            },
-            hokousha: {
-              "label": "当事者に歩行者を含む事故",
-              "paint": {
-                "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 26, 27], "0"], colors[1], colors[0]]
-              }
-            },
-            jitensha: {
-              "label": "当事者に自転車を含む事故",
-              "paint": {
-                "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 23, 25], "00"], colors[1], colors[0]]
-              }
-            },
-            jitensha_assist: {
-              "label": "当事者に電動アシスト自転車を含む事故",
-              "paint": {
-                "circle-color": ["case", ["!=", ["slice", ["get", "_当事者種別"], 24, 25], "0"], colors[1], colors[0]]
-              }
-            },
-            jitensha_vs_hokousha: {
-              "label": "自転車と歩行者の事故",
-              "paint": {
-                "circle-color": ["case", ["==", ["get", "_当事者種別"], "0000 0000 0000 0000 0000 0001 0010 0000".replace(/ /g, "")], colors[1], colors[0]]
-              }
-            },
-            jitensha_vs_jitensha: {
-              "label": "自転車と自転車の事故",
-              "paint": {
-                "circle-color": ["case", ["==", ["get", "_当事者種別"], "0000 0000 0000 0000 0000 0001 0000 0000".replace(/ /g, "")], colors[1], colors[0]]
-              }
-            }
-          };
-
           Object.keys(filters).forEach(key => {
             const option = document.createElement("option");
             option.setAttribute("value", key);
@@ -214,7 +337,7 @@
             });
           };
           select.addEventListener("change", onChange);
-          this._map.once("idle", onChange);
+          //this._map.once("idle", onChange);
 
           return this._container;
         },
